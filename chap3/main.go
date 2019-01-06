@@ -17,6 +17,22 @@ func simpleWait() {
 	wg.Wait()
 }
 
+func scope() {
+	var wg sync.WaitGroup
+	salutation := "hello"
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		salutation = "welcome"
+	}()
+
+	wg.Wait()
+	fmt.Println(salutation) // welcome
+}
+
 func main() {
-	simpleWait()
+	//simpleWait()
+
+	scope()
 }

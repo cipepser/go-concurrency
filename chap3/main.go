@@ -356,6 +356,42 @@ func broadcast() {
 	//Displaying annoying dialog box!
 }
 
+func once() {
+	var count int
+
+	increment := func() { count++ }
+	decrement := func() { count-- }
+
+	var once sync.Once
+	once.Do(increment)
+	once.Do(decrement)
+
+	fmt.Printf("Count is %d\n", count) // Count is 1   (not 0)
+}
+
+func onceWithAnotherFunc() {
+	var count int
+
+	increment := func() {
+		count++
+	}
+
+	var once sync.Once
+
+	var increments sync.WaitGroup
+	increments.Add(100)
+	for i := 0; i < 100; i++ {
+		go func() {
+			defer increments.Done()
+			once.Do(increment)
+		}()
+	}
+
+	increments.Wait()
+	fmt.Printf("Count is %d\n", count) // Count is 1
+
+}
+
 func main() {
 	//simpleWait()
 
@@ -373,5 +409,8 @@ func main() {
 	//rwmutex()
 
 	//cond()
-	broadcast()
+	//broadcast()
+
+	//once()
+	onceWithAnotherFunc()
 }

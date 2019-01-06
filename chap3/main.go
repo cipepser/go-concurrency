@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"runtime"
 	"sync"
+	"time"
 )
 
 func simpleWait() {
@@ -93,6 +94,52 @@ func sizeOfGoroutine() {
 	// 0.000kbとかにもなった。。。
 }
 
+func waitgroup() {
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		fmt.Println("1st goroutine sleeping...")
+		time.Sleep(1)
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		fmt.Println("2nd goroutine sleeping...")
+		time.Sleep(2)
+	}()
+
+	wg.Wait()
+	fmt.Println("All goroutines complete.")
+
+	//2nd goroutine sleeping...
+	//1st goroutine sleeping...
+	//All goroutines complete.
+}
+
+func waitgroupWithLoop() {
+	hello := func(wg *sync.WaitGroup, id int) {
+		defer wg.Done()
+		fmt.Printf("Hello from %v!\n", id)
+	}
+
+	const numGreeters = 5
+	var wg sync.WaitGroup
+	wg.Add(numGreeters)
+	for i := 0; i < numGreeters; i++ {
+		go hello(&wg, i+1)
+	}
+	wg.Wait()
+
+	//Hello from 5!
+	//Hello from 4!
+	//Hello from 3!
+	//Hello from 1!
+	//Hello from 2!
+}
+
 func main() {
 	//simpleWait()
 
@@ -101,5 +148,8 @@ func main() {
 	//badRangeExpression()
 	//goodRangeExpression()
 
-	sizeOfGoroutine()
+	//sizeOfGoroutine()
+
+	//waitgroup()
+	waitgroupWithLoop()
 }

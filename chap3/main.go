@@ -486,6 +486,41 @@ func warmServiceConnCache() *sync.Pool {
 	return p
 }
 
+func deadlockWithChannel() {
+	stringStream := make(chan string)
+	go func() {
+		if 0 != 1 {
+			return
+		}
+		stringStream <- "Hello Channels!"
+	}()
+	fmt.Println(<-stringStream)
+
+	// doesn't work well in this file, the following result is in scratch file.
+	//GOROOT=/usr/local/Cellar/go/1.11.2/libexec #gosetup
+	//GOPATH=.go #gosetup
+	///usr/local/Cellar/go/1.11.2/libexec/bin/go build -o /private/var/folders/mc/3v_pttq16pdblh7vbqf4mvk80000gn/T/___go_build_scratch_4_go /Library/Preferences/GoLand2018.3/scratches/scratch_4.go #gosetup
+	///private/var/folders/mc/3v_pttq16pdblh7vbqf4mvk80000gn/T/___go_build_scratch_4_go #gosetup
+	//fatal error: all goroutines are asleep - deadlock!
+	//
+	//goroutine 1 [chan receive]:
+	//main.main()
+	//	/Library/Preferences/GoLand2018.3/scratches/scratch_4.go:13 +0x7c
+	//
+	//Process finished with exit code 2
+}
+
+func receiveWithOption() {
+	stringStream := make(chan string)
+	go func() {
+		stringStream <- "Hello Channels!"
+	}()
+	salutation, ok := <-stringStream
+	fmt.Printf("(%v): %v", ok, salutation)
+
+	//(true): Hello Channels!
+}
+
 func main() {
 	//simpleWait()
 
@@ -510,4 +545,7 @@ func main() {
 
 	//pool()
 	//poolWithSmallMemory()
+
+	deadlockWithChannel()
+
 }

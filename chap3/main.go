@@ -447,6 +447,8 @@ func connectToservice() interface{} {
 }
 
 func startNetworkDaemon() *sync.WaitGroup {
+	connPool := warmServiceConnCache()
+
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
@@ -464,12 +466,24 @@ func startNetworkDaemon() *sync.WaitGroup {
 				log.Printf("connot accept connection: %v", err)
 				continue
 			}
-			connectToservice()
+			svcConn := connPool.Get()
 			fmt.Fprintf(conn, "")
+			connPool.Put(svcConn)
 			conn.Close()
 		}
 	}()
 	return &wg
+}
+
+func warmServiceConnCache() *sync.Pool {
+	p := &sync.Pool{
+		New: connectToservice,
+	}
+
+	for i := 0; i < 10; i++ {
+		p.Put(p.New())
+	}
+	return p
 }
 
 func main() {

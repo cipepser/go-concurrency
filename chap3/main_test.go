@@ -61,6 +61,7 @@ func BenchmarkNetworkRequest(b *testing.B) {
 		conn.Close()
 	}
 
+	// *** No Pool ***
 	//❯ go test -benchtime=10s -bench=.
 	//goos: darwin
 	//goarch: amd64
@@ -68,4 +69,13 @@ func BenchmarkNetworkRequest(b *testing.B) {
 	//BenchmarkNetworkRequest-4   	      10	1004729582 ns/op
 	//PASS
 	//ok  	github.com/cipepser/go-concurrency/chap3	11.063s
+
+	// *** With Pool ***
+	//❯ go test -benchtime=10s -bench=.
+	//goos: darwin
+	//goarch: amd64
+	//pkg: github.com/cipepser/go-concurrency/chap3
+	//BenchmarkNetworkRequest-4   	    1000	  10389753 ns/op
+	//PASS
+	//ok  	github.com/cipepser/go-concurrency/chap3	25.766s
 }

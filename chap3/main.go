@@ -547,6 +547,30 @@ func rangeForChannel() {
 	//0 1 2 3 4
 }
 
+func releaseMultiGoroutines() {
+	begin := make(chan interface{})
+	var wg sync.WaitGroup
+
+	for i := 0; i < 4; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			<-begin
+			fmt.Printf("%v has begun\n", i)
+		}(i)
+	}
+
+	fmt.Println("Unblocking goroutines...")
+	close(begin) // Without this statement, channel blocks forever, we can see only `Unblocking goroutines...`
+	wg.Wait()
+
+	//Unblocking goroutines...
+	//0 has begun
+	//2 has begun
+	//3 has begun
+	//1 has begun
+}
+
 func main() {
 	//simpleWait()
 
@@ -577,5 +601,7 @@ func main() {
 	//receiveWithOption()
 	//receiveFromClosedChannel()
 
-	rangeForChannel()
+	//rangeForChannel()
+
+	releaseMultiGoroutines()
 }

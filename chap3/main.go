@@ -521,6 +521,15 @@ func receiveWithOption() {
 	//(true): Hello Channels!
 }
 
+func receiveFromClosedChannel() {
+	intStream := make(chan int)
+	close(intStream)
+
+	integer, ok := <-intStream
+	fmt.Printf("(%v): %v", ok, integer)
+	// (false): 0
+}
+
 func main() {
 	//simpleWait()
 
@@ -546,6 +555,8 @@ func main() {
 	//pool()
 	//poolWithSmallMemory()
 
-	deadlockWithChannel()
+	//deadlockWithChannel()
 
+	//receiveWithOption()
+	receiveFromClosedChannel()
 }

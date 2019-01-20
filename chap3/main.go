@@ -530,6 +530,23 @@ func receiveFromClosedChannel() {
 	// (false): 0
 }
 
+func rangeForChannel() {
+	intStream := make(chan int)
+
+	go func() {
+		defer close(intStream)
+		for i := 0; i < 5; i++ {
+			intStream <- i
+		}
+	}()
+
+	for integer := range intStream {
+		fmt.Printf("%v ", integer)
+	}
+
+	//0 1 2 3 4
+}
+
 func main() {
 	//simpleWait()
 
@@ -558,5 +575,7 @@ func main() {
 	//deadlockWithChannel()
 
 	//receiveWithOption()
-	receiveFromClosedChannel()
+	//receiveFromClosedChannel()
+
+	rangeForChannel()
 }

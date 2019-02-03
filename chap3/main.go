@@ -498,6 +498,7 @@ func deadlockWithChannel() {
 	fmt.Println(<-stringStream)
 
 	// doesn't work well in this file, the following result is in scratch file.
+	//
 	//GOROOT=/usr/local/Cellar/go/1.11.2/libexec #gosetup
 	//GOPATH=.go #gosetup
 	///usr/local/Cellar/go/1.11.2/libexec/bin/go build -o /private/var/folders/mc/3v_pttq16pdblh7vbqf4mvk80000gn/T/___go_build_scratch_4_go /Library/Preferences/GoLand2018.3/scratches/scratch_4.go #gosetup
@@ -572,7 +573,7 @@ func releaseMultiGoroutines() {
 	//1 has begun
 }
 
-func bufferdChannel() {
+func bufferedChannel() {
 	var stdoutBuff bytes.Buffer
 	defer stdoutBuff.WriteTo(os.Stdout)
 
@@ -602,6 +603,42 @@ func bufferdChannel() {
 	//Received 2.
 	//Received 3.
 	//Received 4.
+}
+
+func nilChannel()  {
+	var dataStream chan interface{}
+
+	<-dataStream
+	// doesn't work well in this file, the following result is in scratch file.
+	//
+	//fatal error: all goroutines are asleep - deadlock!
+	//
+	//goroutine 1 [chan receive (nil chan)]:
+	//main.main()
+	//
+	//Process finished with exit code 2
+
+
+	dataStream <- struct{}{}
+	// doesn't work well in this file, the following result is in scratch file.
+	//
+	//fatal error: all goroutines are asleep - deadlock!
+	//
+	//goroutine 1 [chan send (nil chan)]:
+	//main.main()
+	//
+	//Process finished with exit code 2
+
+	close(dataStream)
+	// doesn't work well in this file, the following result is in scratch file.
+	//
+	//panic: close of nil channel
+	//
+	//goroutine 1 [running]:
+	//main.main()
+	//	/Users/respepic/Library/Preferences/GoLand2018.3/scratches/scratch_5.go:8 +0x2a
+	//
+	//Process finished with exit code 2
 }
 
 func main() {
@@ -638,5 +675,7 @@ func main() {
 
 	//releaseMultiGoroutines()
 
-	bufferdChannel()
+	//bufferedChannel()
+
+	nilChannel()
 }

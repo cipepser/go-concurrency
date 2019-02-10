@@ -667,6 +667,24 @@ func ownedChannel() {
 	//Done Receiving!
 }
 
+func simpleSelect() {
+	start := time.Now()
+	c := make(chan interface{})
+	go func() {
+		time.Sleep(5 * time.Second)
+		close(c)
+	}()
+
+	fmt.Println("Blocking on read...")
+	select {
+	case <-c:
+		fmt.Printf("Unblocked %v later.\n", time.Since(start))
+	}
+	//Blocking on read...
+	// remark: it takes 5 sec to pass here
+	//Unblocked 5.003069542s later.
+}
+
 func main() {
 	//simpleWait()
 
@@ -705,5 +723,7 @@ func main() {
 
 	//nilChannel()
 
-	ownedChannel()
+	//ownedChannel()
+
+	simpleSelect()
 }

@@ -605,7 +605,7 @@ func bufferedChannel() {
 	//Received 4.
 }
 
-func nilChannel()  {
+func nilChannel() {
 	var dataStream chan interface{}
 
 	<-dataStream
@@ -617,7 +617,6 @@ func nilChannel()  {
 	//main.main()
 	//
 	//Process finished with exit code 2
-
 
 	dataStream <- struct{}{}
 	// doesn't work well in this file, the following result is in scratch file.
@@ -639,6 +638,33 @@ func nilChannel()  {
 	//	/Users/respepic/Library/Preferences/GoLand2018.3/scratches/scratch_5.go:8 +0x2a
 	//
 	//Process finished with exit code 2
+}
+
+func ownedChannel() {
+	chanOwner := func() <-chan int {
+		resultStream := make(chan int, 5)
+		go func() {
+			defer close(resultStream)
+			for i := 0; i <= 5; i++ {
+				resultStream <- i
+			}
+		}()
+		return resultStream
+	}
+
+	resultStream := chanOwner()
+	for result := range resultStream {
+		fmt.Printf("Received: %d\n", result)
+	}
+	fmt.Println("Done Receiving!")
+
+	//Received: 0
+	//Received: 1
+	//Received: 2
+	//Received: 3
+	//Received: 4
+	//Received: 5
+	//Done Receiving!
 }
 
 func main() {
@@ -677,5 +703,7 @@ func main() {
 
 	//bufferedChannel()
 
-	nilChannel()
+	//nilChannel()
+
+	ownedChannel()
 }

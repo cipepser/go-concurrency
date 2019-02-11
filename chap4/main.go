@@ -81,8 +81,29 @@ func mutexBinding() {
 	//gol
 }
 
+func leakGoroutine() {
+	doWork := func(strings <-chan string) <-chan interface{} {
+		completed := make(chan interface{})
+		go func() {
+			defer fmt.Println("doWork exited.")
+			defer close(completed)
+			for s := range strings {
+				fmt.Println(s)
+			}
+		}()
+
+		return completed
+	}
+
+	doWork(nil)
+	// do something here
+	fmt.Println("Done.")
+}
+
 func main() {
 	//adhocBinding()
 	//lexicalBinding()
-	mutexBinding()
+	//mutexBinding()
+
+	leakGoroutine()
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"math/rand"
 	"sync"
 	"time"
 )
@@ -142,11 +143,41 @@ func cancelGoroutine() {
 	//Done.
 }
 
+func blockGoroutineWriting() {
+	newRandStream := func() <-chan int {
+		randStream := make(chan int)
+		go func() {
+			defer fmt.Println("newRandStream closure exited.")
+			defer close(randStream)
+			for {
+				randStream <- rand.Int()
+			}
+		}()
+
+		return randStream
+	}
+
+	randStream := newRandStream()
+	fmt.Println("3 random ints:")
+	for i := 1; i <= 3; i++ {
+		fmt.Printf("%d: %d\n", i, <-randStream)
+	}
+	//❯ go run main.go
+	//3 random ints:
+	//1: 5577006791947779410
+	//2: 8674665223082153551
+	//3: 6129484611666145821
+
+	// * "newRandStream closure exited." was not printed.
+}
+
 func main() {
 	//adhocBinding()
 	//lexicalBinding()
 	//mutexBinding()
 
 	//leakGoroutine()
-	cancelGoroutine()
+	//cancelGoroutine()
+
+	blockGoroutineWriting()
 }

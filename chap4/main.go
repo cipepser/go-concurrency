@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"sync"
+	"time"
 )
 
 func adhocBinding() {
@@ -98,6 +99,47 @@ func leakGoroutine() {
 	doWork(nil)
 	// do something here
 	fmt.Println("Done.")
+
+	//Done.
+	// * "doWork exited." was not printed.
+}
+
+func cancelGoroutine() {
+	doWork := func(
+		done <-chan interface{},
+		strings <-chan string,
+	) <-chan interface{} {
+		terminated := make(chan interface{})
+		go func() {
+			defer fmt.Println("doWork exited.")
+			defer close(terminated)
+			for {
+				select {
+				case s := <-strings:
+					fmt.Println(s)
+				case <-done:
+					return
+				}
+			}
+		}()
+
+		return terminated
+	}
+
+	done := make(chan interface{})
+	terminated := doWork(done, nil)
+
+	go func() {
+		time.Sleep(1 * time.Second)
+		fmt.Println("Canceling doWork goroutine...")
+		close(done)
+	}()
+
+	<-terminated
+	fmt.Println("Done.")
+	//Canceling doWork goroutine...
+	//doWork exited.
+	//Done.
 }
 
 func main() {
@@ -105,5 +147,6 @@ func main() {
 	//lexicalBinding()
 	//mutexBinding()
 
-	leakGoroutine()
+	//leakGoroutine()
+	cancelGoroutine()
 }

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"math/rand"
+	"net/http"
 	"sync"
 	"time"
 )
@@ -258,6 +259,41 @@ func orPattern() {
 	//done after 1.005296233s
 }
 
+func justPrintError() {
+	checkStatus := func(
+		done <-chan interface{},
+		urls ...string,
+	) <-chan *http.Response {
+		response := make(chan *http.Response)
+		go func() {
+			defer close(response)
+			for _, url := range urls {
+				resp, err := http.Get(url)
+				if err != nil {
+					fmt.Println(err)
+					continue
+				}
+				select {
+				case <-done:
+					return
+				case response <- resp:
+				}
+			}
+		}()
+		return response
+	}
+
+	done := make(chan interface{})
+	defer close(done)
+
+	urls := []string{"https://www.google.com", "https://badhost"}
+	for response := range checkStatus(done, urls...) {
+		fmt.Printf("Response: %v\n", response.Status)
+	}
+	//Response: 200 OK
+	//Get https://badhost: dial tcp: lookup badhost: no such host
+}
+
 func main() {
 	//adhocBinding()
 	//lexicalBinding()
@@ -269,5 +305,7 @@ func main() {
 	//blockGoroutineWriting()
 	//cancelGoroutineWriting()
 
-	orPattern()
+	//orPattern()
+
+	justPrintError()
 }

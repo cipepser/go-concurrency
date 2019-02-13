@@ -327,16 +327,27 @@ func returnResult() {
 	done := make(chan interface{})
 	defer close(done)
 
-	urls := []string{"https://www.google.com", "https://badhost"}
+	errCount := 0
+	urls := []string{"a", "https://www.google.com", "b", "c", "d"}
 	for result := range checkStatus(done, urls...) {
 		if result.Error != nil {
 			fmt.Printf("error: %v", result.Error)
+			errCount++
+			if errCount >= 3 {
+				fmt.Println("Too many errors, breaking!")
+				break
+			}
 			continue
 		}
 		fmt.Printf("Response: %v\n", result.Response.Status)
 	}
+	// without errCount
 	//Response: 200 OK
 	//error: Get https://badhost: dial tcp: lookup badhost: no such host
+
+	// after adding errCount
+	//error: Get a: unsupported protocol scheme ""Response: 200 OK
+	//error: Get b: unsupported protocol scheme ""error: Get c: unsupported protocol scheme ""Too many errors, breaking!
 }
 
 func main() {

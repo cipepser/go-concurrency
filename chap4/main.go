@@ -453,6 +453,52 @@ func generatePipeline() {
 	//18
 }
 
+func repeatInt() {
+	repeat := func(done <-chan interface{}, values ...int) <-chan interface{} {
+		valueStream := make(chan interface{})
+		go func() {
+			defer close(valueStream)
+			for {
+				for _, v := range values {
+					select {
+					case <-done:
+						return
+					case valueStream <- v:
+					}
+				}
+			}
+		}()
+		return valueStream
+	}
+
+	take := func(
+		done <-chan interface{},
+		valueStream <-chan interface{},
+		num int,
+	) <-chan interface{} {
+		takeStream := make(chan interface{})
+		go func() {
+			defer close(takeStream)
+			for i := 0; i < num; i++ {
+				select {
+				case <-done:
+					return
+				case takeStream <- <-valueStream:
+				}
+			}
+		}()
+		return takeStream
+	}
+
+	done := make(chan interface{})
+	defer close(done)
+
+	for num := range take(done, repeat(done, 1), 10) {
+		fmt.Printf("%v ", num)
+	}
+	//1 1 1 1 1 1 1 1 1 1
+}
+
 func main() {
 	//adhocBinding()
 	//lexicalBinding()
@@ -470,5 +516,7 @@ func main() {
 	//returnResult()
 
 	//pipeline()
-	generatePipeline()
+	//generatePipeline()
+
+	repeatInt()
 }

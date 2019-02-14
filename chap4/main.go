@@ -350,6 +350,41 @@ func returnResult() {
 	//error: Get b: unsupported protocol scheme ""error: Get c: unsupported protocol scheme ""Too many errors, breaking!
 }
 
+func pipeline() {
+	multiply := func(values []int, multiplier int) []int {
+		multipliedValues := make([]int, len(values))
+		for i, v := range values {
+			multipliedValues[i] = v * multiplier
+		}
+		return multipliedValues
+	}
+	add := func(values []int, additive int) []int {
+		addedValues := make([]int, len(values))
+		for i, v := range values {
+			addedValues[i] = v + additive
+		}
+		return addedValues
+	}
+
+	ints := []int{1, 2, 3, 4}
+	//for _, v := range add(multiply(ints, 2), 1) {
+	//	fmt.Println(v)
+	//}
+	////3
+	////5
+	////7
+	////9
+
+	for _, v := range multiply(add(multiply(ints, 2), 1), 2) {
+		fmt.Println(v)
+	}
+	//6
+	//10
+	//14
+	//18
+
+}
+
 func main() {
 	//adhocBinding()
 	//lexicalBinding()
@@ -364,5 +399,7 @@ func main() {
 	//orPattern()
 
 	//justPrintError()
-	returnResult()
+	//returnResult()
+
+	pipeline()
 }

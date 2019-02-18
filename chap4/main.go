@@ -700,6 +700,82 @@ func _bridge() {
 	//0 1 2 3 4 5 6 7 8 9
 }
 
+func noContext() {
+	locale := func(done <-chan interface{}) (string, error) {
+		select {
+		case <-done:
+			return "", fmt.Errorf("canceled")
+		case <-time.After(3 * time.Second):
+		}
+		return "EN/US", nil
+	}
+
+	genGreeting := func(done <-chan interface{}) (string, error) {
+		switch locale, err := locale(done); {
+		case err != nil:
+			return "", err
+		case locale == "EN/US":
+			return "hello", nil
+		}
+		return "", fmt.Errorf("unsupported locale")
+	}
+
+	genFarewell := func(done <-chan interface{}) (string, error) {
+		switch locale, err := locale(done); {
+		case err != nil:
+			return "", err
+		case locale == "EN/US":
+			return "goodbye", nil
+		}
+		return "", fmt.Errorf("unsupported locale")
+	}
+
+	printGreeting := func(done <-chan interface{}) error {
+		greeting, err := genGreeting(done)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("%s world!\n", greeting)
+		return nil
+	}
+
+	printFarewell := func(done <-chan interface{}) error {
+		farewell, err := genFarewell(done)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("%s world!\n", farewell)
+		return nil
+	}
+
+	// main
+	var wg sync.WaitGroup
+	done := make(chan interface{})
+	defer close(done)
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if err := printGreeting(done); err != nil {
+			fmt.Printf("%v", err)
+			return
+		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if err := printFarewell(done); err != nil {
+			fmt.Printf("%v", err)
+			return
+		}
+	}()
+
+	wg.Wait()
+	//hello world!
+	//goodbye world!
+}
+
 func main() {
 	//adhocBinding()
 	//lexicalBinding()
@@ -725,5 +801,7 @@ func main() {
 
 	//_tee()
 
-	_bridge()
+	//_bridge()
+
+	noContext()
 }

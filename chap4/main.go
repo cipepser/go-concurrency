@@ -650,6 +650,56 @@ func _tee() {
 	//out1: 2, out2: 2
 }
 
+func _bridge() {
+	bridge := func(
+		done <-chan interface{},
+		chanStream <-chan <-chan interface{},
+	) <-chan interface{} {
+		valSteam := make(chan interface{})
+		go func() {
+			defer close(valSteam)
+			for {
+				var stream <-chan interface{}
+				select {
+				case maybeStream, ok := <-chanStream:
+					if !ok {
+						return
+					}
+					stream = maybeStream
+				case <-done:
+					return
+				}
+				for val := range orDone(done, stream) {
+					select {
+					case valSteam <- val:
+					case <-done:
+					}
+				}
+			}
+		}()
+		return valSteam
+	}
+
+	genVals := func() <-chan <-chan interface{} {
+		chanStream := make(chan (<-chan interface{}))
+		go func() {
+			defer close(chanStream)
+			for i := 0; i < 10; i++ {
+				stream := make(chan interface{}, 1)
+				stream <- i
+				close(stream)
+				chanStream <- stream
+			}
+		}()
+		return chanStream
+	}
+
+	for v := range bridge(nil, genVals()) {
+		fmt.Printf("%v ", v)
+	}
+	//0 1 2 3 4 5 6 7 8 9
+}
+
 func main() {
 	//adhocBinding()
 	//lexicalBinding()
@@ -673,5 +723,7 @@ func main() {
 
 	//_orDone()
 
-	_tee()
+	//_tee()
+
+	_bridge()
 }

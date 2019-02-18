@@ -454,36 +454,51 @@ func generatePipeline() {
 }
 
 func repeats() {
-	//repeat := func(done <-chan interface{}, values ...int) <-chan interface{} {
+	repeat := func(done <-chan interface{}, values ...interface{}) <-chan interface{} {
+		valueStream := make(chan interface{})
+		go func() {
+			defer close(valueStream)
+			for {
+				for _, v := range values {
+					select {
+					case <-done:
+						return
+					case valueStream <- v:
+					}
+				}
+			}
+		}()
+		return valueStream
+	}
+
+	//repeatFn := func(done <-chan interface{}, fn func() interface{}) <-chan interface{} {
 	//	valueStream := make(chan interface{})
 	//	go func() {
 	//		defer close(valueStream)
 	//		for {
-	//			for _, v := range values {
-	//				select {
-	//				case <-done:
-	//					return
-	//				case valueStream <- v:
-	//				}
+	//			select {
+	//			case <-done:
+	//				return
+	//			case valueStream <- fn():
 	//			}
 	//		}
 	//	}()
 	//	return valueStream
 	//}
 
-	repeatFn := func(done <-chan interface{}, fn func() interface{}) <-chan interface{} {
-		valueStream := make(chan interface{})
+	toString := func(done <-chan interface{}, valueStream <-chan interface{}) <-chan string {
+		stringStream := make(chan string)
 		go func() {
-			defer close(valueStream)
-			for {
+			defer close(stringStream)
+			for v := range valueStream {
 				select {
 				case <-done:
 					return
-				case valueStream <- fn():
+				case stringStream <- v.(string):
 				}
 			}
 		}()
-		return valueStream
+		return stringStream
 	}
 
 	take := func(
@@ -513,21 +528,58 @@ func repeats() {
 	//}
 	////1 1 1 1 1 1 1 1 1 1
 
-	rand := func() interface{} { return rand.Int() }
-	for num := range take(done, repeatFn(done, rand), 10) {
-		fmt.Println(num)
-	}
-	//5577006791947779410
-	//8674665223082153551
-	//6129484611666145821
-	//4037200794235010051
-	//3916589616287113937
-	//6334824724549167320
-	//605394647632969758
-	//1443635317331776148
-	//894385949183117216
-	//2775422040480279449
+	//rand := func() interface{} { return rand.Int() }
+	//for num := range take(done, repeatFn(done, rand), 10) {
+	//	fmt.Println(num)
+	//}
+	////5577006791947779410
+	////8674665223082153551
+	////6129484611666145821
+	////4037200794235010051
+	////3916589616287113937
+	////6334824724549167320
+	////605394647632969758
+	////1443635317331776148
+	////894385949183117216
+	////2775422040480279449
 
+	var message string
+	for token := range toString(done, take(done, repeat(done, "I", "am."), 5)) {
+		message += token
+	}
+
+	fmt.Printf("message: %s...", message)
+	//message: Iam.Iam.I...
+}
+
+func _orDone() {
+	//orDone := func(done, c <-chan interface{}) <-chan interface{} {
+	//	valStream := make(chan interface{})
+	//	go func() {
+	//		defer close(valStream)
+	//		for {
+	//			select {
+	//			case <-done:
+	//				return
+	//			case v, ok := <-c:
+	//				if !ok {
+	//					return
+	//				}
+	//				select {
+	//				case valStream <- v:
+	//				case <-done:
+	//				}
+	//
+	//			}
+	//		}
+	//	}()
+	//	return valStream
+	//}
+
+	//done := make(chan interface{})
+	//for val := range orDone(done, myChan) {
+	//	doSomething(val)
+	//}
 }
 
 func main() {
@@ -549,5 +601,8 @@ func main() {
 	//pipeline()
 	//generatePipeline()
 
-	repeats()
+	//repeats()
+
+	//_orDone()
+
 }

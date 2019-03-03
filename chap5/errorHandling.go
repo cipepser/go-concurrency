@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"runtime/debug"
 )
 
@@ -23,4 +24,16 @@ func wrapError(err error, messagef string, msgargs ...interface{}) MyError {
 
 func (err MyError) Error() string {
 	return err.Message
+}
+
+type LowLevelErr struct {
+	error
+}
+
+func isGloballyExec(path string) (bool, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		return false, LowLevelErr{(wrapError(err, err.Error()))}
+	}
+	return info.Mode().Perm()&0100 == 0100, nil
 }

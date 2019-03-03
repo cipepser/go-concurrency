@@ -218,6 +218,42 @@ func DoWorkMock(done <-chan interface{}, nums ...int) (<-chan interface{}, <-cha
 	return heartbeat, intStream
 }
 
+func DoWorkMockWithInterval(
+	done <-chan interface{},
+	pulseIntreval time.Duration,
+	nums ...int,
+) (<-chan interface{}, <-chan int) {
+	heartbeat := make(chan interface{}, 1)
+	intStream := make(chan int)
+	go func() {
+		defer close(heartbeat)
+		defer close(intStream)
+
+		time.Sleep(2 * time.Second) // simulate to do something
+
+		pulse := time.Tick(pulseIntreval)
+
+	numLoop:
+		for _, n := range nums {
+			for {
+				select {
+				case <-done:
+					return
+				case <-pulse:
+					select {
+					case heartbeat <- struct{}{}:
+					default:
+					}
+				case intStream <- n:
+					continue numLoop
+				}
+			}
+		}
+	}()
+
+	return heartbeat, intStream
+}
+
 //func main() {
 //	//DoWork()
 //

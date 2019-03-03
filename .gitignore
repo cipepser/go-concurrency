@@ -84,3 +84,4 @@ fabric.properties
 *.out
 
 .idea/
+.DS_Store

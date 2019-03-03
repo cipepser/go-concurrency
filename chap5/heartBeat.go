@@ -13,8 +13,8 @@ func DoWork() {
 		heartbeat := make(chan interface{})
 		results := make(chan time.Time)
 		go func() {
-			defer close(heartbeat)
-			defer close(results)
+			//defer close(heartbeat)
+			//defer close(results)
 
 			pulse := time.Tick(pulseInterval)
 			workGen := time.Tick(2 * pulseInterval)
@@ -39,7 +39,7 @@ func DoWork() {
 				}
 			}
 
-			for {
+			for i := 0; i < 2; i++ {
 				select {
 				case <-done:
 					return
@@ -73,9 +73,11 @@ func DoWork() {
 			}
 			fmt.Printf("results %v\n", r.Second())
 		case <-time.After(timeout):
+			fmt.Println("worker goroutine is not healthy!")
 			return
 		}
 	}
+	// correct pattern
 	//pulse
 	//pulse
 	//results 25
@@ -91,6 +93,11 @@ func DoWork() {
 	//pulse
 	//pulse
 	//results 33
+
+	// bad pattern(doesn't close heartbeat and results channels
+	//pulse
+	//pulse
+	//worker goroutine is not healthy!
 }
 
 func main() {

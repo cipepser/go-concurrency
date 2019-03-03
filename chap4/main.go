@@ -941,6 +941,21 @@ func deadline() {
 	// This result is returned earlier than introduceContext()'s one.
 }
 
+func ProcessRequest(userID, authTolen string) {
+	ctx := context.WithValue(context.Background(), "userID", userID)
+	ctx = context.WithValue(ctx, "authToken", authTolen)
+	HandleResponse(ctx)
+}
+
+func HandleResponse(ctx context.Context) {
+	fmt.Printf(
+		"handling response for %v (%v)",
+		ctx.Value("userID"),
+		ctx.Value("authToken"),
+	)
+	//handling response for jane (abc123)
+}
+
 func main() {
 	//adhocBinding()
 	//lexicalBinding()
@@ -970,5 +985,6 @@ func main() {
 
 	//noContext()
 	//introduceContext()
-	deadline()
+	//deadline()
+	ProcessRequest("jane", "abc123")
 }

@@ -4,18 +4,27 @@ import (
 	"context"
 	"log"
 	"os"
+	"sort"
 	"sync"
+	"time"
 
 	"golang.org/x/time/rate"
 )
 
+func Per(eventCount int, duration time.Duration) rate.Limit {
+	return rate.Every(duration / time.Duration(eventCount))
+}
+
 type APIConnection struct {
-	rateLimiter *rate.Limiter
+	rateLimiter RateLimiter
 }
 
 func Open() *APIConnection {
+	secondLimit := rate.NewLimiter(Per(2, time.Second), 1)
+	minuteLimit := rate.NewLimiter(Per(10, time.Minute), 10)
+
 	return &APIConnection{
-		rateLimiter: rate.NewLimiter(rate.Limit(1), 1),
+		rateLimiter: MultiLimiter(secondLimit, minuteLimit),
 	}
 }
 
@@ -33,6 +42,38 @@ func (a *APIConnection) ResolveAddress(ctx context.Context) error {
 	}
 	// do something
 	return nil
+}
+
+type RateLimiter interface {
+	Wait(context.Context) error
+	Limit() rate.Limit
+}
+
+type multiLimiter struct {
+	limiters []RateLimiter
+}
+
+func (l *multiLimiter) Wait(ctx context.Context) error {
+	for _, l := range l.limiters {
+		if err := l.Wait(ctx); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (l *multiLimiter) Limit() rate.Limit {
+	return l.limiters[0].Limit()
+}
+
+func MultiLimiter(limiters ...RateLimiter) *multiLimiter {
+	sort.Slice(limiters, func(i, j int) bool {
+		return limiters[i].Limit() < limiters[j].Limit()
+	})
+
+	return &multiLimiter{
+		limiters: limiters,
+	}
 }
 
 func main() {
@@ -112,4 +153,27 @@ func main() {
 	//12:10:21 ReadFile
 	//12:10:22 ResolveAddress
 	//12:10:22 Done.
+
+	// set multi-limit
+	//14:20:23 ReadFile
+	//14:20:24 ResolveAddress
+	//14:20:24 ReadFile
+	//14:20:25 ReadFile
+	//14:20:25 ReadFile
+	//14:20:26 ReadFile
+	//14:20:26 ReadFile
+	//14:20:27 ReadFile
+	//14:20:27 ResolveAddress
+	//14:20:28 ResolveAddress
+	//14:20:29 ReadFile
+	//14:20:35 ReadFile
+	//14:20:41 ReadFile
+	//14:20:47 ResolveAddress
+	//14:20:53 ResolveAddress
+	//14:20:59 ResolveAddress
+	//14:21:05 ResolveAddress
+	//14:21:11 ResolveAddress
+	//14:21:17 ResolveAddress
+	//14:21:23 ResolveAddress
+	//14:21:23 Done.
 }

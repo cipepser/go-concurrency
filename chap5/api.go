@@ -5,20 +5,32 @@ import (
 	"log"
 	"os"
 	"sync"
+
+	"golang.org/x/time/rate"
 )
 
-type APIConnection struct{}
+type APIConnection struct {
+	rateLimiter *rate.Limiter
+}
 
 func Open() *APIConnection {
-	return &APIConnection{}
+	return &APIConnection{
+		rateLimiter: rate.NewLimiter(rate.Limit(1), 1),
+	}
 }
 
 func (a *APIConnection) ReadFile(ctx context.Context) error {
+	if err := a.rateLimiter.Wait(ctx); err != nil {
+		return err
+	}
 	// do something
 	return nil
 }
 
 func (a *APIConnection) ResolveAddress(ctx context.Context) error {
+	if err := a.rateLimiter.Wait(ctx); err != nil {
+		return err
+	}
 	// do something
 	return nil
 }
@@ -55,6 +67,7 @@ func main() {
 	}
 
 	wg.Wait()
+	// No limit
 	//13:49:35 ReadFile
 	//13:49:35 ResolveAddress
 	//13:49:35 ReadFile
@@ -76,4 +89,27 @@ func main() {
 	//13:49:35 ResolveAddress
 	//13:49:35 ReadFile
 	//13:49:35 Done.
+
+	// set limit to process 1 request / sec
+	//12:10:03 ReadFile
+	//12:10:04 ReadFile
+	//12:10:05 ReadFile
+	//12:10:06 ResolveAddress
+	//12:10:07 ResolveAddress
+	//12:10:08 ResolveAddress
+	//12:10:09 ReadFile
+	//12:10:10 ResolveAddress
+	//12:10:11 ReadFile
+	//12:10:12 ReadFile
+	//12:10:13 ResolveAddress
+	//12:10:14 ResolveAddress
+	//12:10:15 ReadFile
+	//12:10:16 ResolveAddress
+	//12:10:17 ResolveAddress
+	//12:10:18 ReadFile
+	//12:10:19 ResolveAddress
+	//12:10:20 ReadFile
+	//12:10:21 ReadFile
+	//12:10:22 ResolveAddress
+	//12:10:22 Done.
 }

@@ -16,20 +16,28 @@ func Per(eventCount int, duration time.Duration) rate.Limit {
 }
 
 type APIConnection struct {
-	rateLimiter RateLimiter
+	networkLimit,
+	diskLimit,
+	apiLimit RateLimiter
 }
 
 func Open() *APIConnection {
-	secondLimit := rate.NewLimiter(Per(2, time.Second), 1)
-	minuteLimit := rate.NewLimiter(Per(10, time.Minute), 10)
-
 	return &APIConnection{
-		rateLimiter: MultiLimiter(secondLimit, minuteLimit),
+		networkLimit: MultiLimiter(
+			rate.NewLimiter(Per(2, time.Second), 2),
+			rate.NewLimiter(Per(10, time.Minute), 10),
+		),
+		diskLimit: MultiLimiter(
+			rate.NewLimiter(rate.Limit(1), 1),
+		),
+		apiLimit: MultiLimiter(
+			rate.NewLimiter(Per(3, time.Second), 3),
+		),
 	}
 }
 
 func (a *APIConnection) ReadFile(ctx context.Context) error {
-	if err := a.rateLimiter.Wait(ctx); err != nil {
+	if err := MultiLimiter(a.apiLimit, a.diskLimit).Wait(ctx); err != nil {
 		return err
 	}
 	// do something
@@ -37,7 +45,7 @@ func (a *APIConnection) ReadFile(ctx context.Context) error {
 }
 
 func (a *APIConnection) ResolveAddress(ctx context.Context) error {
-	if err := a.rateLimiter.Wait(ctx); err != nil {
+	if err := MultiLimiter(a.apiLimit, a.networkLimit).Wait(ctx); err != nil {
 		return err
 	}
 	// do something
@@ -176,4 +184,27 @@ func main() {
 	//14:21:17 ResolveAddress
 	//14:21:23 ResolveAddress
 	//14:21:23 Done.
+
+	// network, disk and api limit
+	//14:33:06 ReadFile
+	//14:33:06 ResolveAddress
+	//14:33:06 ResolveAddress
+	//14:33:07 ResolveAddress
+	//14:33:07 ReadFile
+	//14:33:07 ResolveAddress
+	//14:33:08 ResolveAddress
+	//14:33:08 ReadFile
+	//14:33:08 ResolveAddress
+	//14:33:09 ResolveAddress
+	//14:33:09 ReadFile
+	//14:33:09 ResolveAddress
+	//14:33:10 ResolveAddress
+	//14:33:10 ResolveAddress
+	//14:33:10 ReadFile
+	//14:33:11 ReadFile
+	//14:33:12 ReadFile
+	//14:33:13 ReadFile
+	//14:33:14 ReadFile
+	//14:33:15 ReadFile
+	//14:33:15 Done.
 }
